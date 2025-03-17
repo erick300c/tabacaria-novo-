@@ -1,0 +1,8 @@
+{
+  // ... (existing translations)
+  "sales": {
+    // ... (existing sales translations)
+    "editSale": "Edit Sale",
+    "updateSuccess": "Sale updated successfully"
+  }
+}
