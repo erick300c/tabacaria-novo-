@@ -16,7 +16,13 @@ i18n
         translation: ptBRTranslations
       }
     },
-    fallbackLng: 'en',
+    fallbackLng: 'pt-BR',
+    lng: 'pt-BR',
+    detection: {
+      order: ['localStorage', 'navigator'],
+      lookupLocalStorage: 'i18nextLng',
+      caches: ['localStorage'],
+    },
     interpolation: {
       escapeValue: false
     }

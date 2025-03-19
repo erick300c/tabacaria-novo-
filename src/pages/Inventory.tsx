@@ -1,16 +1,47 @@
 import React, { useState } from 'react';
-import { Plus, Search, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, ArrowUpDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useProducts } from '../hooks/useProducts';
 import AddProductModal from '../components/AddProductModal';
+import EditProductModal from '../components/EditProductModal';
 
 const Inventory = () => {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const { products, loading, deleteProduct, updateProduct } = useProducts();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const { products, loading, deleteProduct } = useProducts();
   
-  const filteredProducts = products.filter(product =>
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const getStockStatus = (product) => {
+    if (product.quantity > product.min_stock_level) return 2; // In Stock
+    if (product.quantity > 0) return 1; // Low Stock
+    return 0; // Out of Stock
+  };
+
+  const sortedProducts = [...(products || [])].sort((a, b) => {
+    if (sortBy === 'status') {
+      return sortOrder === 'asc' 
+        ? getStockStatus(a) - getStockStatus(b)
+        : getStockStatus(b) - getStockStatus(a);
+    }
+    return sortOrder === 'asc' 
+      ? String(a[sortBy]).localeCompare(String(b[sortBy]))
+      : String(b[sortBy]).localeCompare(String(a[sortBy]));
+  });
+
+  const filteredProducts = sortedProducts.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -25,12 +56,9 @@ const Inventory = () => {
     }
   };
 
-  const handleEdit = async (id: string, updates: Partial<typeof products[0]>) => {
-    try {
-      await updateProduct(id, updates);
-    } catch (error) {
-      console.error('Failed to update product:', error);
-    }
+  const handleEdit = (product) => {
+    setSelectedProduct(product);
+    setIsEditModalOpen(true);
   };
 
   if (loading) {
@@ -70,19 +98,49 @@ const Inventory = () => {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {t('inventory.table.product')}
+                <button 
+                  className="flex items-center"
+                  onClick={() => handleSort('name')}
+                >
+                  {t('inventory.table.product')}
+                  <ArrowUpDown className="w-4 h-4 ml-1" />
+                </button>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {t('inventory.table.category')}
+                <button 
+                  className="flex items-center"
+                  onClick={() => handleSort('category')}
+                >
+                  {t('inventory.table.category')}
+                  <ArrowUpDown className="w-4 h-4 ml-1" />
+                </button>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {t('inventory.table.quantity')}
+                <button 
+                  className="flex items-center"
+                  onClick={() => handleSort('quantity')}
+                >
+                  {t('inventory.table.quantity')}
+                  <ArrowUpDown className="w-4 h-4 ml-1" />
+                </button>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {t('inventory.table.price')}
+                <button 
+                  className="flex items-center"
+                  onClick={() => handleSort('selling_price')}
+                >
+                  {t('inventory.table.price')}
+                  <ArrowUpDown className="w-4 h-4 ml-1" />
+                </button>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {t('inventory.table.status')}
+                <button 
+                  className="flex items-center"
+                  onClick={() => handleSort('status')}
+                >
+                  {t('inventory.table.status')}
+                  <ArrowUpDown className="w-4 h-4 ml-1" />
+                </button>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 {t('inventory.table.actions')}
@@ -137,7 +195,7 @@ const Inventory = () => {
                   <div className="flex space-x-2">
                     <button 
                       className="text-blue-500 hover:text-blue-700"
-                      onClick={() => handleEdit(product.id, product)}
+                      onClick={() => handleEdit(product)}
                     >
                       <Edit className="w-5 h-5" />
                     </button>
@@ -159,6 +217,17 @@ const Inventory = () => {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
       />
+
+      {selectedProduct && (
+        <EditProductModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setSelectedProduct(null);
+          }}
+          product={selectedProduct}
+        />
+      )}
     </div>
   );
 };

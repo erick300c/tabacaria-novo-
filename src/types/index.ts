@@ -21,10 +21,14 @@ export interface Sale {
   payment_method: 'card' | 'cash' | 'pix';
   created_at: string;
   sale_items: Array<{
+    product_id: string;
     quantity: number;
     price_at_sale: number;
-    products: {
+    products?: {
+      id: string;
       name: string;
+      selling_price: number;
+      category: string;
     };
   }>;
 }
@@ -39,4 +43,9 @@ export interface DashboardStats {
     quantity: number;
     revenue: number;
   }[];
+}
+
+export interface CategoryData {
+  name: string;
+  value: number;
 }
